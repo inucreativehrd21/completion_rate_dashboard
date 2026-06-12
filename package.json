@@ -1,0 +1,55 @@
+{
+  "name": "completion-rate-dashboard",
+  "productName": "수료율대시보드",
+  "version": "1.0.0",
+  "description": "2026 HRD아카이브 실시간 수료율 대시보드 (Electron + Google Sheet gviz)",
+  "main": "main.js",
+  "author": "inucreativehrd21",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "publish": "electron-builder --publish always"
+  },
+  "build": {
+    "appId": "kr.inu.hrd.completion-dashboard",
+    "productName": "수료율대시보드",
+    "files": [
+      "main.js",
+      "preload.js",
+      "config.json",
+      "renderer/**/*",
+      "build/icon.ico"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "수료율대시보드",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "inucreativehrd21",
+        "repo": "completion_rate_dashboard"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.2.1"
+  }
+}

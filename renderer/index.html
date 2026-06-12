@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+  <style>
+    body { 
+      font-family: 'Noto Sans KR', sans-serif; 
+      background-color: #0b0f17; 
+      margin: 0; 
+      padding: 30px 40px; 
+      color: #f1f5f9; 
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .container { 
+      width: 100%; 
+      margin: 0 auto; 
+      background: #111827; 
+      padding: 40px; 
+      border-radius: 24px; 
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+      border: 1px solid #1f2937;
+      box-sizing: border-box; 
+    }
+    
+    header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 40px; 
+      border-bottom: 1px solid #374151; 
+      padding-bottom: 25px; 
+    }
+    
+    h1 { 
+      font-size: 26px; 
+      margin: 0; 
+      color: #ffffff; 
+      font-weight: 700; 
+      letter-spacing: -0.5px;
+    }
+    
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .select-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .opacity-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: #1f2937;
+      border-radius: 12px;
+      border: 1px solid #4b5563;
+    }
+    .opacity-control label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #cbd5e1;
+      font-family: 'Noto Sans KR';
+    }
+    .opacity-control input[type=range] {
+      width: 110px;
+      accent-color: #10b981;
+      cursor: pointer;
+    }
+    .opacity-control .opacity-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: #10b981;
+      min-width: 42px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    select {
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 1px solid #4b5563;
+      font-size: 15px;
+      cursor: pointer;
+      background: #1f2937;
+      font-weight: 700;
+      color: #ffffff;
+      outline: none;
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: all 0.2s ease;
+    }
+    select:hover { border-color: #9ca3af; background: #374151; }
+    
+    .chart-scroll-wrapper { 
+      width: 100%; 
+      overflow-x: auto; 
+      margin-bottom: 45px; 
+      border: 1px solid #1f2937; 
+      border-radius: 18px; 
+      background: #111827; 
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 540px;
+      width: 100%;
+      padding: 24px 24px 36px 24px;
+      box-sizing: border-box;
+    }
+    
+    .sub-title { 
+      font-size: 19px; 
+      font-weight: 700; 
+      margin-bottom: 18px; 
+      color: #f3f4f6; 
+      display: flex; 
+      align-items: center; 
+    }
+    .sub-title::before { 
+      content: ''; 
+      width: 6px; 
+      height: 18px; 
+      background: #ff4d5a; 
+      margin-right: 12px; 
+      border-radius: 4px; 
+    }
+    .sub-title.edu::before { background: #00b4d8; } 
+    .sub-title.ratio::before { background: #a855f7; } 
+    
+    .loading {
+      text-align: center;
+      padding: 150px;
+      font-size: 18px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .reset-zoom-btn {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      z-index: 10;
+      padding: 7px 14px;
+      background: rgba(31, 41, 55, 0.92);
+      border: 1px solid #4b5563;
+      color: #f3f4f6;
+      border-radius: 10px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      transition: all 0.15s ease;
+    }
+    .reset-zoom-btn:hover {
+      background: rgba(34, 197, 94, 0.9);
+      border-color: #22c55e;
+      color: #ffffff;
+    }
+
+    .zoom-hint {
+      position: absolute;
+      top: 14px;
+      left: 24px;
+      z-index: 10;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+      pointer-events: none;
+      display: none;
+    }
+    .zoom-hint.show { display: block; }
+
+    .toggle-control {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      background: #1f2937;
+      border-radius: 12px;
+      border: 1px solid #4b5563;
+    }
+    .toggle-control label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #cbd5e1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Noto Sans KR';
+    }
+    .toggle-control input[type=checkbox] {
+      width: 16px;
+      height: 16px;
+      accent-color: #4f8ef7;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1 id="appTitle">2026 HRD아카이브 실시간 수료율 대시보드</h1>
+    <div class="controls-group">
+      <div class="opacity-control" id="opacityControl" style="display:none;">
+        <label>알림톡 투명도</label>
+        <input type="range" id="annotationOpacity" min="0" max="100" value="100">
+        <span class="opacity-value" id="opacityValue">100%</span>
+      </div>
+      <div class="toggle-control" id="barToggle" style="display:none;">
+        <label><input type="checkbox" id="showBarsChk" checked>수료자 인원 막대</label>
+      </div>
+      <div class="select-box">
+        <label style="font-weight:500; font-size:15px; color:#9ca3af; font-family: 'Noto Sans KR';">보기 주기 설정: </label>
+        <select id="viewMode">
+          <option value="weekly" selected>주간별 추이</option>
+          <option value="daily">일별 추이</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <div id="loader" class="loading">데이터를 실시간으로 불러오는 중입니다...</div>
+
+  <div id="dashboardContent" style="display:none;">
+    <div class="sub-title" id="mainChartTitle">전체 학습자 수료율 추이 (H열 기준)</div>
+    <div class="chart-scroll-wrapper">
+      <div class="chart-container" id="mainContainer">
+        <span class="zoom-hint" id="mainChartHint">드래그: 확대 · Ctrl+휠: 줌</span>
+        <button class="reset-zoom-btn" id="mainChartResetBtn" data-target="mainChart">🔍 전체 보기</button>
+        <canvas id="mainChart"></canvas>
+      </div>
+    </div>
+
+    <div class="sub-title edu" id="eduChartTitle">에듀 학습자 수료율 추이 (L열 기준)</div>
+    <div class="chart-scroll-wrapper">
+      <div class="chart-container" id="eduContainer">
+        <span class="zoom-hint" id="eduChartHint">드래그: 확대 · Ctrl+휠: 줌</span>
+        <button class="reset-zoom-btn" id="eduChartResetBtn" data-target="eduChart">🔍 전체 보기</button>
+        <canvas id="eduChart"></canvas>
+      </div>
+    </div>
+
+    <div class="sub-title ratio" id="ratioChartTitle">수료자 내부 구성 현황 (에듀 vs 에듀X 인원 누적)</div>
+    <div class="chart-scroll-wrapper">
+      <div class="chart-container" id="ratioContainer">
+        <span class="zoom-hint" id="ratioChartHint">드래그: 확대 · Ctrl+휠: 줌</span>
+        <button class="reset-zoom-btn" id="ratioChartResetBtn" data-target="ratioChart">🔍 전체 보기</button>
+        <canvas id="ratioChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // [전역 오류 배너] 예외 발생 시 상단에 간략 표시(닫기 가능). 상세는 콘솔(Ctrl+Shift+I)에 기록.
+  window.onerror = function(msg, src, line, col, err) {
+    console.error('[dashboard error]', msg, err || ('@' + src + ':' + line + ':' + col));
+    let box = document.getElementById('errBanner');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'errBanner';
+      box.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;font:13px/1.5 "Noto Sans KR",sans-serif;padding:10px 44px 10px 16px;white-space:pre-wrap;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+      const close = document.createElement('span');
+      close.textContent = '✕';
+      close.style.cssText = 'position:absolute;top:8px;right:14px;cursor:pointer;font-weight:700;';
+      close.onclick = function() { box.style.display = 'none'; };
+      box.appendChild(close);
+      const txt = document.createElement('span');
+      txt.id = 'errBannerTxt';
+      box.appendChild(txt);
+      document.body.appendChild(box);
+    }
+    box.style.display = 'block';
+    document.getElementById('errBannerTxt').textContent =
+      '⚠ 일시적인 표시 오류가 발생했습니다. 새로고침(Ctrl+R) 후에도 계속되면 관리자에게 문의하세요. (' + msg + ')';
+    return false;
+  };
+  window.onunhandledrejection = function(e) {
+    if (window.onerror) window.onerror('(promise) ' + ((e.reason && e.reason.message) || e.reason), '', 0, 0, e.reason);
+  };
+
+  let allData = {};
+  let mainChart, eduChart, ratioChart;
+
+  // [수료자 막대 토글] 주간 1번 차트의 수료자 인원 막대 표시 여부
+  let showCompleterBars = true;
+  // [렌더 대상 배열] 실제로 차트에 그려지는 배열(일별은 today+7로 잘린 뷰). 툴팁/라벨이 이 배열 인덱스를 참조.
+  let renderWeekly = [], renderDaily = [];
+
+  function toggleCompleterBars(on) {
+    showCompleterBars = !!on;
+    updateAllCharts();
+  }
+
+  // [알림톡 투명도] 0~1, 슬라이더 입력으로 갱신
+  let annotationOpacity = 1;
+  // [알림톡 라벨 위치 사용자 오버라이드] 드래그 결과를 canvasId→annKey→yAdjust 로 보존
+  const noteYAdjustOverrides = {};
+  // [드래그 상태]
+  let hoveredNote = null;
+  let dragState = null;
+
+  function hexToRgba(hex, alpha) {
+    if (!hex || hex[0] !== '#') return hex;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
+  // [데이터 트렁케이션] 마지막으로 수집된 인덱스 = totalRate가 양수인 최후의 인덱스
+  function findLastCollectedIndex(dataArr, key) {
+    for (let i = dataArr.length - 1; i >= 0; i--) {
+      const v = dataArr[i][key];
+      if (v !== null && v !== undefined && v > 0) return i;
+    }
+    return -1;
+  }
+  function truncateAfterIndex(dataArr, key, lastIdx) {
+    return dataArr.map((d, i) => (i <= lastIdx ? d[key] : null));
+  }
+
+  // [총 수료자 라벨] 일별 차트 우측에 누적 수료자 인원을 박스 라벨로 표시
+  function makeTotalLabel(date, yVal, title, count, color) {
+    return {
+      type: 'label',
+      xValue: date,
+      yValue: yVal,
+      content: [title, (count || 0).toLocaleString() + '명'],
+      backgroundColor: hexToRgba(color, 0.95),
+      color: '#ffffff',
+      font: { family: 'Noto Sans KR', size: 13, weight: '700' },
+      textAlign: 'center',
+      padding: { top: 7, bottom: 7, left: 13, right: 13 },
+      borderRadius: 10,
+      xAdjust: 82,
+      yAdjust: 30,
+      z: 101,
+      callout: { display: true, side: 6, margin: 4, position: 'left', borderColor: hexToRgba(color, 0.9), borderWidth: 1.5 }
+    };
+  }
+
+  Chart.register(ChartDataLabels);
+  // chartjs-plugin-annotation UMD 등록 (v3는 명시적 register 필요)
+  if (window['chartjs-plugin-annotation']) {
+    Chart.register(window['chartjs-plugin-annotation']);
+  }
+  // chartjs-plugin-zoom UMD 등록 (UMD 글로벌 이름은 ChartZoom)
+  if (typeof ChartZoom !== 'undefined') {
+    Chart.register(ChartZoom);
+  } else if (window['chartjs-plugin-zoom']) {
+    Chart.register(window['chartjs-plugin-zoom']);
+  }
+
+  const crosshairPlugin = {
+    id: 'crosshair',
+    afterDraw: (chart) => {
+      if (chart.tooltip?._active?.length) {
+        const activePoint = chart.tooltip._active[0];
+        const ctx = chart.ctx;
+        const x = activePoint.element.x;
+        const y = activePoint.element.y;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([3, 3]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(156, 163, 175, 0.4)';
+        ctx.moveTo(x, chart.scales.y.top);
+        ctx.lineTo(x, chart.scales.y.bottom);
+        ctx.moveTo(chart.scales.x.left, y);
+        ctx.lineTo(chart.scales.x.right, y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  };
+
+  // [줌/팬 상태 토글] 모드 전환 시 줌 상태 초기화 + 드래그/팬/휠 활성 여부 조정
+  function setZoomMode(chart, enabled) {
+    if (!chart || !chart.options.plugins || !chart.options.plugins.zoom) return;
+    const z = chart.options.plugins.zoom;
+    if (enabled) {
+      z.pan.enabled = false;
+      z.zoom.drag.enabled = true;
+      z.zoom.wheel.enabled = true;
+    } else {
+      z.pan.enabled = false;
+      z.zoom.drag.enabled = false;
+      z.zoom.wheel.enabled = false;
+    }
+    if (typeof chart.resetZoom === 'function') chart.resetZoom('none');
+    const btn = document.getElementById(chart.canvas.id + 'ResetBtn');
+    if (btn) btn.style.display = 'none';
+    const hint = document.getElementById(chart.canvas.id + 'Hint');
+    if (hint) hint.classList.toggle('show', enabled);
+  }
+
+  // [전체 보기 버튼] 줌 상태 리셋 → 다시 드래그-줌 가능 상태로 복귀
+  function resetChartZoom(canvasId) {
+    const chart = Chart.getChart(canvasId);
+    if (!chart) return;
+    if (typeof chart.resetZoom === 'function') chart.resetZoom();
+    const z = chart.options.plugins.zoom;
+    if (z) {
+      z.pan.enabled = false;
+      z.zoom.drag.enabled = true;
+    }
+    const btn = document.getElementById(canvasId + 'ResetBtn');
+    if (btn) btn.style.display = 'none';
+  }
+
+  // [알림톡 이벤트 주석] 일별 모드 M열 데이터를 꺾은선그래프 위 팝업 라벨로 표시
+  function buildNoteAnnotations(dailyData, rateKey, accentColor, borderColor, canvasId) {
+    const annotations = {};
+    const entries = dailyData
+      .map((d, i) => ({ ...d, _index: i }))
+      .filter(d => d.note && d.note.length > 0 && d[rateKey] !== null && d[rateKey] !== undefined && d[rateKey] > 0);
+
+    const op = annotationOpacity;
+    const fillColor = hexToRgba(accentColor, op);
+    const calloutColor = hexToRgba(accentColor, Math.max(op * 0.9, 0.15));
+    const borderClr = hexToRgba(borderColor, op);
+    const textColor = 'rgba(255,255,255,' + op + ')';
+    const pointBorderClr = hexToRgba(accentColor, Math.max(op, 0.4));
+    const overrides = noteYAdjustOverrides[canvasId] || {};
+
+    entries.forEach((entry, idx) => {
+      const rate = entry[rateKey];
+      const stagger = idx % 3;
+      const defaultYAdjust = -32 - stagger * 18; // -32, -50, -68
+      const annKey = 'noteLabel_' + entry._index;
+      const yAdjustVal = (overrides[annKey] !== undefined) ? overrides[annKey] : defaultYAdjust;
+
+      annotations['notePoint_' + entry._index] = {
+        type: 'point',
+        xValue: entry.date,
+        yValue: rate,
+        backgroundColor: '#ffffff',
+        borderColor: pointBorderClr,
+        borderWidth: 3,
+        radius: 5,
+        z: 99
+      };
+
+      annotations[annKey] = {
+        type: 'label',
+        xValue: entry.date,
+        yValue: rate,
+        content: entry.note,
+        backgroundColor: fillColor,
+        color: textColor,
+        font: { family: 'Noto Sans KR', size: 11, weight: '700' },
+        textAlign: 'center',
+        padding: { top: 5, bottom: 5, left: 10, right: 10 },
+        borderRadius: 8,
+        borderColor: borderClr,
+        borderWidth: 1,
+        xAdjust: 0,
+        yAdjust: yAdjustVal,
+        callout: {
+          display: true,
+          side: 6,
+          margin: 4,
+          position: 'bottom',
+          borderColor: calloutColor,
+          borderWidth: 1.5,
+          borderDash: [2, 2]
+        },
+        // [드래그] 라벨에 마우스 진입/이탈 감지
+        enter: function(ctx) {
+          hoveredNote = { chart: ctx.chart, annKey: annKey, canvasId: canvasId };
+          if (!dragState) ctx.chart.canvas.style.cursor = 'ns-resize';
+        },
+        leave: function(ctx) {
+          if (!dragState) {
+            hoveredNote = null;
+            ctx.chart.canvas.style.cursor = '';
+          }
+        },
+        z: 100
+      };
+    });
+
+    return annotations;
+  }
+
+  // [투명도 슬라이더] 모든 daily 차트의 알림톡 주석을 다시 빌드해 적용
+  function updateAnnotationOpacity(value) {
+    annotationOpacity = Math.max(0, Math.min(100, value)) / 100;
+    const vEl = document.getElementById('opacityValue');
+    if (vEl) vEl.innerText = Math.round(annotationOpacity * 100) + '%';
+    const mode = document.getElementById('viewMode').value;
+    if (mode !== 'daily') return;
+    mainChart.options.plugins.annotation = {
+      clip: false,
+      annotations: buildNoteAnnotations(renderDaily, 'totalRate', '#10b981', '#065f46', 'mainChart')
+    };
+    eduChart.options.plugins.annotation = {
+      clip: false,
+      annotations: buildNoteAnnotations(renderDaily, 'eduRate', '#10b981', '#065f46', 'eduChart')
+    };
+    mainChart.update('none');
+    eduChart.update('none');
+  }
+
+  // [라벨 드래그] mousedown→start, mousemove→update yAdjust, mouseup→commit
+  function setupAnnotationDrag(chart) {
+    chart.canvas.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      if (!hoveredNote || hoveredNote.chart !== chart) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = chart.canvas.getBoundingClientRect();
+      const my = e.clientY - rect.top;
+      const ann = chart.options.plugins.annotation.annotations[hoveredNote.annKey];
+      if (!ann) return;
+      dragState = {
+        chart: chart,
+        canvasId: hoveredNote.canvasId,
+        annKey: hoveredNote.annKey,
+        startMouseY: my,
+        startYAdjust: (typeof ann.yAdjust === 'number') ? ann.yAdjust : 0
+      };
+      chart.canvas.style.cursor = 'grabbing';
+      // 줌 드래그가 켜져 있으면 임시로 끔
+      const z = chart.options.plugins.zoom;
+      if (z && z.zoom.drag.enabled) {
+        dragState._zoomDragWasEnabled = true;
+        z.zoom.drag.enabled = false;
+      }
+    }, true); // 캡쳐 단계: 줌 플러그인보다 먼저 처리
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    if (!dragState) return;
+    e.preventDefault();
+    const rect = dragState.chart.canvas.getBoundingClientRect();
+    const my = e.clientY - rect.top;
+    const dy = my - dragState.startMouseY;
+    const newYAdjust = dragState.startYAdjust + dy;
+    if (!noteYAdjustOverrides[dragState.canvasId]) noteYAdjustOverrides[dragState.canvasId] = {};
+    noteYAdjustOverrides[dragState.canvasId][dragState.annKey] = newYAdjust;
+    const ann = dragState.chart.options.plugins.annotation.annotations[dragState.annKey];
+    if (ann) {
+      ann.yAdjust = newYAdjust;
+      dragState.chart.update('none');
+    }
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!dragState) return;
+    const z = dragState.chart.options.plugins.zoom;
+    if (z && dragState._zoomDragWasEnabled) {
+      // 드래그-줌 복원: 단, 현재 줌이 걸려있으면 패닝 모드 유지(드래그-줌은 꺼두기)
+      const isZoomed = dragState.chart.getZoomLevel && dragState.chart.getZoomLevel() > 1;
+      z.zoom.drag.enabled = !isZoomed;
+    }
+    dragState.chart.canvas.style.cursor = '';
+    dragState = null;
+  });
+
+  function getCommonOptions(chartId) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      spanGaps: true,
+      layout: { padding: { bottom: 55, top: 50, left: 10, right: 20 } },
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: { 
+            boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', 
+            font: { family: 'Noto Sans KR', size: 13, weight: '500' }, padding: 15,
+            color: '#f3f4f6'
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(17, 24, 39, 0.95)',
+          borderColor: '#374151',
+          borderWidth: 1,
+          padding: 14,
+          titleFont: { family: 'Noto Sans KR', size: 14, weight: '700' },
+          bodyFont: { family: 'Noto Sans KR', size: 13 },
+          footerFont: { family: 'Noto Sans KR', size: 13, weight: '700' },
+          cornerRadius: 12,
+          boxPadding: 6,
+          usePointStyle: true,
+          callbacks: {
+            // [주간/일간 조건별 단위 교정] 최상단 증감 수치 바인딩 로직 고도화
+            beforeBody: (context) => {
+              let index = context[0].dataIndex;
+              let mode = document.getElementById('viewMode').value;
+              let list = (mode === 'weekly') ? renderWeekly : renderDaily;
+
+              if (list && list[index]) {
+                let changeVal = list[index].changeVal;
+                if (changeVal !== null && changeVal !== undefined && changeVal !== "") {
+                  let num = parseFloat(changeVal);
+                  if (!isNaN(num)) {
+                    if (mode === 'weekly') {
+                      // 주별 모드: 퍼센트(%) + 전주대비 증감 인원수(명) 병기
+                      let displayNum = num;
+                      if (Math.abs(num) < 1) displayNum = num * 100;
+                      // 증감 인원수 = 이번 주 수료자 - 지난 주 수료자
+                      let cntStr = '';
+                      if (index > 0 && list[index - 1] && list[index].totalActualCount > 0) {
+                        let d = (list[index].totalActualCount || 0) - (list[index - 1].totalActualCount || 0);
+                        cntStr = ` (${d >= 0 ? '+' : ''}${d.toLocaleString()}명)`;
+                      }
+                      if (num > 0) return `🔺 전주대비 증감: +${displayNum.toFixed(1)}%${cntStr}\n━━━━━━━━━━━━━`;
+                      if (num < 0) return `🔷 전주대비 증감: ${displayNum.toFixed(1)}%${cntStr}\n━━━━━━━━━━━━━`;
+                      return `🔸 전주대비 증감: 0.0%${cntStr}\n━━━━━━━━━━━━━`;
+                    } else {
+                      // 일별 모드: 수료자 인원수(명) 직관 처리
+                      if (num > 0) return `🔺 전일대비 증감: +${num.toLocaleString()}명\n━━━━━━━━━━━━━`;
+                      if (num < 0) return `🔷 전일대비 증감: ${num.toLocaleString()}명\n━━━━━━━━━━━━━`;
+                      return `🔸 전일대비 증감: 0명\n━━━━━━━━━━━━━`;
+                    }
+                  } else {
+                    let str = String(changeVal);
+                    let emoji = !str.includes('-') ? '🔺' : '🔷';
+                    let labelText = (mode === 'weekly') ? '전주대비 증감' : '전일대비 증감';
+                    return `${emoji} ${labelText}: ${str}\n━━━━━━━━━━━━━`;
+                  }
+                }
+              }
+              return '';
+            }
+          }
+        },
+        zoom: {
+          pan: {
+            enabled: false,
+            mode: 'x',
+            modifierKey: null
+          },
+          zoom: {
+            drag: {
+              enabled: true,
+              backgroundColor: 'rgba(34, 197, 94, 0.18)',
+              borderColor: 'rgba(34, 197, 94, 0.7)',
+              borderWidth: 1,
+              threshold: 8
+            },
+            wheel: {
+              enabled: true,
+              modifierKey: 'ctrl',
+              speed: 0.08
+            },
+            mode: 'x',
+            onZoomComplete: function(ctx) {
+              const chart = ctx.chart;
+              const z = chart.options.plugins.zoom;
+              const zoomed = chart.getZoomLevel && chart.getZoomLevel() > 1;
+              z.pan.enabled = !!zoomed;
+              z.zoom.drag.enabled = !zoomed;
+              const btn = document.getElementById(chart.canvas.id + 'ResetBtn');
+              if (btn) btn.style.display = zoomed ? 'inline-block' : 'none';
+              chart.update('none');
+            }
+          },
+          limits: {
+            x: { min: 'original', max: 'original' }
+          }
+        },
+        datalabels: {
+          display: function(context) {
+            const mode = document.getElementById('viewMode').value;
+            if (mode === 'daily') {
+              const chart = context.chart;
+              const label = String(chart.data.labels[context.dataIndex] || '');
+              
+              const today = new Date();
+              const mm = String(today.getMonth() + 1).padStart(2, '0');
+              const dd = String(today.getDate()).padStart(2, '0');
+              const m = String(today.getMonth() + 1);
+              const d = String(today.getDate());
+              
+              const isToday = label.includes(`${mm}-${dd}`) || label.includes(`${m}-${d}`) || label.includes(`${mm}/${dd}`) || label.includes(`${m}/${d}`);
+              return isToday && context.dataset.data[context.dataIndex] > 0;
+            } 
+            return context.dataset.data[context.dataIndex] > 0;
+          },
+          formatter: function(value, context) {
+            if (chartId === 'ratioChart') {
+              let list = (document.getElementById('viewMode').value === 'weekly') ? renderWeekly : renderDaily;
+              if (!list || !list[context.dataIndex]) return '';
+              let total = list[context.dataIndex].totalActualCount;
+              return total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '';
+            }
+            return (value * 100).toFixed(1) + '%';
+          },
+          color: '#ffffff',
+          font: { family: 'Noto Sans KR', size: 11, weight: '700' },
+          backgroundColor: function(context) {
+            return context.dataset.borderColor || context.dataset.backgroundColor;
+          },
+          borderRadius: 6,
+          padding: { top: 4, bottom: 4, left: 6, right: 6 },
+          align: function(context) {
+            if (chartId === 'ratioChart') return 'center';
+            return context.dataIndex % 2 === 0 ? 'top' : 'bottom';
+          },
+          offset: 6
+        }
+      },
+      scales: {
+        x: {
+          offset: true,
+          grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false, display: true },
+          ticks: {
+            display: true,
+            font: { family: 'Noto Sans KR', size: 12, weight: '600' },
+            color: '#e5e7eb',
+            minRotation: 45,
+            maxRotation: 45,
+            autoSkip: false,
+            padding: 10,
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              const mode = document.getElementById('viewMode').value;
+              if (mode === 'daily' && typeof label === 'string' && label.length >= 10) {
+                return label.substring(5); // 2026-03-12 -> 03-12
+              }
+              return label;
+            }
+          }
+        },
+        y: {
+          min: 0,
+          beginAtZero: true,
+          grid: { color: 'rgba(255, 255, 255, 0.04)', borderDash: [4, 4], drawBorder: false },
+          ticks: { callback: v => (v * 100).toFixed(0) + '%', font: { family: 'Noto Sans KR', size: 12, weight: '500' }, color: '#9ca3af', padding: 8 }
+        }
+      }
+    };
+  }
+
+  // [전역 config] main.js(원격/캐시/번들)에서 주입. 시트ID·셀범위·컬럼매핑·디자인 토큰.
+  let APP_CONFIG = null;
+  let refreshTimer = null;
+
+  // config 로더: Electron이면 dashboardAPI.getConfig(), 아니면(브라우저 미리보기) 번들 config.json fetch.
+  async function loadAppConfig() {
+    if (window.dashboardAPI && window.dashboardAPI.getConfig) {
+      const r = await window.dashboardAPI.getConfig();
+      return r.config;
+    }
+    const res = await fetch('../config.json');
+    return await res.json();
+  }
+
+  function applyDesign(cfg) {
+    const d = (cfg && cfg.design) || {};
+    if (d.appTitle) {
+      document.getElementById('appTitle').innerText = d.appTitle;
+      document.title = d.appTitle;
+    }
+  }
+
+  function runLoad() {
+    loadDashboardData(function(data) {
+      allData = data;
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('dashboardContent').style.display = 'block';
+      if (mainChart) { updateAllCharts(); } else { initCharts(); }
+    }, function(err) {
+      // 차트가 이미 떠 있으면(주기 갱신 실패) 화면은 유지하고 콘솔만 남김
+      if (mainChart) { console.error('갱신 실패:', err); return; }
+      const loader = document.getElementById('loader');
+      loader.style.color = '#f87171';
+      loader.innerHTML = '데이터를 불러오지 못했습니다.<br><span style="font-size:13px;color:#9ca3af;">' + (err && err.message ? err.message : err) + '</span>';
+      console.error(err);
+    });
+  }
+
+  // [핸들러 바인딩] 인라인 on* 속성 대신 addEventListener로 부착(일부 환경의 인라인 핸들러 차단/CSP 무관하게 동작 보장)
+  function attachHandlers() {
+    const vm = document.getElementById('viewMode');
+    if (vm) vm.addEventListener('change', updateAllCharts);
+
+    const chk = document.getElementById('showBarsChk');
+    if (chk) chk.addEventListener('change', function() { toggleCompleterBars(this.checked); });
+
+    const op = document.getElementById('annotationOpacity');
+    if (op) op.addEventListener('input', function() { updateAnnotationOpacity(this.value); });
+
+    document.querySelectorAll('.reset-zoom-btn[data-target]').forEach(function(btn) {
+      btn.addEventListener('click', function() { resetChartZoom(btn.getAttribute('data-target')); });
+    });
+  }
+
+  window.onload = async function() {
+    attachHandlers();
+    try {
+      APP_CONFIG = await loadAppConfig();
+      applyDesign(APP_CONFIG);
+    } catch (e) {
+      console.error('config 로드 실패, 기본 동작 시도:', e);
+    }
+    runLoad();
+
+    // [실시간 갱신] config.design.refreshIntervalMin 분마다 라이브 시트 재조회
+    const mins = APP_CONFIG && APP_CONFIG.design && APP_CONFIG.design.refreshIntervalMin;
+    if (mins && mins > 0) {
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(runLoad, mins * 60 * 1000);
+    }
+  };
+
+  // [데이터 소스 라우터] Electron/브라우저 공통 — config의 sheetId로 gviz 직접 조회.
+  function loadDashboardData(onSuccess, onError) {
+    const sheetId = (APP_CONFIG && APP_CONFIG.sheetId) ||
+      new URLSearchParams(window.location.search).get('sheet');
+    if (!sheetId) { onError(new Error('config.json에 sheetId가 없습니다.')); return; }
+    fetchSheetDataViaGviz(sheetId).then(onSuccess).catch(onError);
+  }
+
+  // gviz JSON 엔드포인트로 시트 데이터 직접 fetch (시트가 "링크 있는 모든 사용자 보기" 공개 상태여야 함)
+  // 주간/일별 영역을 config.ranges의 명시적 범위로 각각 fetch — 자동 헤더 감지/빈 행 압축 인덱스 어긋남 회피
+  async function fetchSheetDataViaGviz(sheetId) {
+    const ranges = (APP_CONFIG && APP_CONFIG.ranges) || {};
+    const weeklyRange = (ranges.weekly && ranges.weekly.range) || 'B5:M42';
+    const dailyRange = (ranges.daily && ranges.daily.range) || 'B46:N258';
+    const base = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(sheetId) + '/gviz/tq?tqx=out:json&headers=0';
+    const [weeklyJson, dailyJson] = await Promise.all([
+      fetchGvizRange(base + '&range=' + weeklyRange),
+      fetchGvizRange(base + '&range=' + dailyRange)
+    ]);
+    return transformGvizToDashboardData(weeklyJson, dailyJson);
+  }
+
+  async function fetchGvizRange(url) {
+    let text;
+    if (window.dashboardAPI && window.dashboardAPI.gvizFetch) {
+      // Electron: 메인 프로세스 경유 → CORS 우회
+      text = await window.dashboardAPI.gvizFetch(url);
+    } else {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('시트 응답 실패 (' + response.status + ') — 시트 공유 설정이 "링크 있는 모든 사용자 보기"인지 확인하세요.');
+      text = await response.text();
+    }
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start < 0 || end < 0) throw new Error('gviz 응답 파싱 실패');
+    return JSON.parse(text.substring(start, end + 1));
+  }
+
+  function transformGvizToDashboardData(weeklyJson, dailyJson) {
+    function rowsFromJson(json, numCols) {
+      return (json.table.rows || []).map(r => {
+        const cells = [];
+        for (let i = 0; i < numCols; i++) {
+          const cell = r.c[i];
+          cells.push(cell && cell.v !== undefined ? cell.v : null);
+        }
+        return cells;
+      });
+    }
+
+    function gvizDateToString(val) {
+      if (val === null || val === undefined) return null;
+      if (typeof val === 'string') {
+        const m = val.match(/Date\((\d+),(\d+),(\d+)/);
+        if (m) {
+          const y = m[1];
+          const mo = String(parseInt(m[2], 10) + 1).padStart(2, '0');
+          const d = String(parseInt(m[3], 10)).padStart(2, '0');
+          return y + '-' + mo + '-' + d;
+        }
+        return val;
+      }
+      if (val instanceof Date) return val.toISOString().substring(0, 10);
+      return String(val);
+    }
+
+    function isDateLike(v) {
+      if (v === null || v === undefined || v === '') return false;
+      if (v instanceof Date) return true;
+      if (typeof v === 'string' && v.startsWith('Date(')) return true;
+      return !isNaN(Date.parse(v));
+    }
+
+    function parseRate(val) {
+      if (val === null || val === undefined || val === '') return null;
+      const num = parseFloat(val);
+      if (isNaN(num)) return null;
+      return num > 1 ? num / 100 : num;
+    }
+
+    function parseCount(val) {
+      if (val === null || val === undefined || val === '') return 0;
+      const n = parseInt(val, 10);
+      return isNaN(n) ? 0 : n;
+    }
+
+    // [컬럼 매핑] config.ranges.*.columns 로 열 위치를 외부화 → 시트 레이아웃이 바뀌면
+    // 코드가 아니라 config.json의 숫자만 수정하면 됨. config가 없으면 기존 기본 인덱스로 폴백.
+    const RANGES = (APP_CONFIG && APP_CONFIG.ranges) || {};
+    const WEEKLY_DEF = RANGES.weekly || { numCols: 12, columns: { date:0, totalActualCount:3, eduActualCount:8, totalRate:6, eduRate:10, lastYearRate:11, changeVal:7 } };
+    const DAILY_DEF = RANGES.daily  || { numCols: 13, columns: { date:0, totalActualCount:3, eduActualCount:8, totalRate:6, eduRate:10, note:11, changeVal:7 } };
+    const C = (def, key, fallback) => {
+      const i = def.columns && def.columns[key];
+      return (i === undefined || i === null) ? fallback : i;
+    };
+
+    const weeklyRows = rowsFromJson(weeklyJson, WEEKLY_DEF.numCols || 12);
+    const dailyRows = rowsFromJson(dailyJson, DAILY_DEF.numCols || 13);
+
+    const weekly = weeklyRows
+      .filter(row => isDateLike(row[C(WEEKLY_DEF, 'date', 0)]))
+      .map(row => {
+        const total = parseCount(row[C(WEEKLY_DEF, 'totalActualCount', 3)]);
+        const edu = parseCount(row[C(WEEKLY_DEF, 'eduActualCount', 8)]);
+        const chg = row[C(WEEKLY_DEF, 'changeVal', 7)];
+        return {
+          date: gvizDateToString(row[C(WEEKLY_DEF, 'date', 0)]),
+          totalActualCount: total,
+          eduActualCount: edu,
+          nonEduActualCount: Math.max(0, total - edu),
+          totalRate: parseRate(row[C(WEEKLY_DEF, 'totalRate', 6)]),
+          eduRate: parseRate(row[C(WEEKLY_DEF, 'eduRate', 10)]),
+          lastYearRate: parseRate(row[C(WEEKLY_DEF, 'lastYearRate', 11)]),
+          changeVal: (chg !== '' && chg !== null) ? chg : null
+        };
+      });
+
+    const daily = dailyRows
+      .filter(row => isDateLike(row[C(DAILY_DEF, 'date', 0)]))
+      .map(row => {
+        const total = parseCount(row[C(DAILY_DEF, 'totalActualCount', 3)]);
+        const edu = parseCount(row[C(DAILY_DEF, 'eduActualCount', 8)]);
+        const noteIdx = C(DAILY_DEF, 'note', 11);
+        const chg = row[C(DAILY_DEF, 'changeVal', 7)];
+        return {
+          date: gvizDateToString(row[C(DAILY_DEF, 'date', 0)]),
+          totalActualCount: total,
+          eduActualCount: edu,
+          nonEduActualCount: Math.max(0, total - edu),
+          totalRate: parseRate(row[C(DAILY_DEF, 'totalRate', 6)]),
+          eduRate: parseRate(row[C(DAILY_DEF, 'eduRate', 10)]),
+          note: row[noteIdx] ? String(row[noteIdx]).trim() : '',
+          changeVal: (chg !== '' && chg !== null) ? chg : null
+        };
+      });
+
+    return { weekly: weekly, daily: daily };
+  }
+
+  function initCharts() {
+    const ctxMain = document.getElementById('mainChart').getContext('2d');
+    const ctxEdu = document.getElementById('eduChart').getContext('2d');
+    const ctxRatio = document.getElementById('ratioChart').getContext('2d');
+
+    // 1. 전체 학습자 차트
+    let mainOpts = getCommonOptions('mainChart');
+    mainOpts.plugins.tooltip.callbacks.label = (c) => {
+      // 수료자 인원 막대(좌측 yCount 축)는 인원수로 표시 (잘린 주차는 값이 null → 표시 생략)
+      if (c.dataset.yAxisID === 'yCount') {
+        if (c.parsed.y == null) return '';
+        return c.dataset.label + ': ' + c.parsed.y.toLocaleString() + '명';
+      }
+      if (c.parsed.y == null) return '';
+      let list = (document.getElementById('viewMode').value === 'weekly') ? renderWeekly : renderDaily;
+      const item = list[c.dataIndex];
+      if (c.datasetIndex === 0 && item) return [(c.dataset.label + ': ' + (c.parsed.y * 100).toFixed(1) + '%'), '   └ 전체 수료자: ' + (item.totalActualCount || 0).toLocaleString() + '명'];
+      return c.dataset.label + ': ' + (c.parsed.y * 100).toFixed(1) + '%';
+    };
+    // [수료자 인원 축] 주간 1번 차트 전용 좌측 count 축. 기본 숨김(updateAllCharts에서 토글).
+    mainOpts.scales.yCount = {
+      position: 'left',
+      display: false,
+      beginAtZero: true,
+      grid: { drawOnChartArea: false },
+      ticks: { callback: v => v.toLocaleString() + '명', font: { family: 'Noto Sans KR', size: 12, weight: '500' }, color: '#9ca3af', padding: 8 }
+    };
+    mainChart = new Chart(ctxMain, { type: 'line', data: { datasets: [] }, options: mainOpts, plugins: [crosshairPlugin] });
+    
+    // 2. 에듀 학습자 차트
+    let eduOpts = getCommonOptions('eduChart');
+    eduOpts.plugins.tooltip.callbacks = {
+      label: (c) => {
+        if (c.parsed.y == null) return '';
+        let mode = document.getElementById('viewMode').value;
+        let list = (mode === 'weekly') ? renderWeekly : renderDaily;
+        const item = list[c.dataIndex];
+        if (!item) return c.dataset.label + ': ' + (c.parsed.y * 100).toFixed(1) + '%';
+        let baseLines = [(c.dataset.label + ': ' + (c.parsed.y * 100).toFixed(1) + '%'), '   └ 에듀 수료자: ' + (item.eduActualCount || 0).toLocaleString() + '명'];
+        if (mode === 'daily' && item.note) { baseLines.push('   └ 비고: ' + item.note); }
+        return baseLines;
+      }
+    };
+    eduChart = new Chart(ctxEdu, { type: 'line', data: { datasets: [] }, options: eduOpts, plugins: [crosshairPlugin] });
+
+    // 3. 누적 세로 막대 그래프
+    let ratioOpts = getCommonOptions('ratioChart');
+    ratioOpts.scales = {
+      x: {
+        stacked: true,
+        offset: true,
+        grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false, display: true },
+        ticks: {
+          display: true,
+          font: { family: 'Noto Sans KR', size: 12, weight: '600' },
+          color: '#e5e7eb',
+          minRotation: 45,
+          maxRotation: 45,
+          autoSkip: false,
+          padding: 10,
+          callback: function(value) {
+            const label = this.getLabelForValue(value);
+            const mode = document.getElementById('viewMode').value;
+            if (mode === 'daily' && typeof label === 'string' && label.length >= 10) {
+              return label.substring(5);
+            }
+            return label;
+          }
+        }
+      },
+      y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.04)', borderDash: [4, 4], drawBorder: false }, ticks: { callback: v => v.toLocaleString() + '명', font: { family: 'Noto Sans KR', size: 12, weight: '500' }, color: '#9ca3af' } }
+    };
+    ratioOpts.plugins.datalabels.align = 'center';
+    ratioOpts.plugins.datalabels.anchor = 'center';
+    ratioOpts.plugins.datalabels.offset = 0;
+
+    ratioOpts.plugins.tooltip.callbacks.label = function(c) {
+      let val = c.parsed.y;
+      if (val == null) return '';
+      let list = (document.getElementById('viewMode').value === 'weekly') ? renderWeekly : renderDaily;
+      let item = list[c.dataIndex];
+      let total = item ? item.totalActualCount : 0;
+      let perc = total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
+      return c.dataset.label + ': ' + val.toLocaleString() + '명 (' + perc + ')';
+    };
+    ratioChart = new Chart(ctxRatio, { type: 'bar', data: { datasets: [] }, options: ratioOpts });
+
+    // [라벨 드래그 핸들러] 모든 차트에 mousedown 캡쳐 핸들러 부착
+    setupAnnotationDrag(mainChart);
+    setupAnnotationDrag(eduChart);
+
+    updateAllCharts();
+  }
+
+  function updateAllCharts() {
+    const mode = document.getElementById('viewMode').value;
+    const mainTitle = document.getElementById('mainChartTitle'), eduTitle = document.getElementById('eduChartTitle'), ratioTitle = document.getElementById('ratioChartTitle');
+    const mc = document.getElementById('mainContainer'), ec = document.getElementById('eduContainer'), rc = document.getElementById('ratioContainer');
+    
+    const isDaily = mode === 'daily';
+
+    // [렌더 뷰 산출] 주별은 전체, 일별은 "오늘 +7일"까지만 잘라 표시(불필요한 미래 구간 제거).
+    renderWeekly = allData.weekly || [];
+    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+    const cutoff = new Date(today0); cutoff.setDate(cutoff.getDate() + 7);
+    renderDaily = (allData.daily || []).filter(d => {
+      const dt = new Date(d.date);
+      return !isNaN(dt.getTime()) && dt <= cutoff;
+    });
+
+    // 데스크탑 가독성 우선: 일별은 라벨이 겹치지 않을 폭으로 확장, 주별은 컨테이너 전체 폭 사용
+    const dailyCount = renderDaily.length;
+    const dailyWidth = Math.max(1600, dailyCount * 26) + "px";
+    const width = isDaily ? dailyWidth : "100%";
+    mc.style.width = ec.style.width = rc.style.width = width;
+
+    // [좌측 여백] 일별 모드 알림톡 팝업이 그래프 왼쪽 끝을 뚫는 문제 보완
+    const leftPad = isDaily ? 90 : 20;
+    [mainChart, eduChart, ratioChart].forEach(c => { c.options.layout.padding.left = leftPad; });
+    // [우측 여백] 일별 1·2번 차트의 "총 수료자" 라벨이 잘리지 않도록 확장
+    mainChart.options.layout.padding.right = isDaily ? 150 : 20;
+    eduChart.options.layout.padding.right = isDaily ? 150 : 20;
+    ratioChart.options.layout.padding.right = 20;
+
+    // [컨트롤 표시] 투명도=일별 전용, 수료자 막대 토글=주별 전용
+    document.getElementById('opacityControl').style.display = isDaily ? 'flex' : 'none';
+    document.getElementById('barToggle').style.display = isDaily ? 'none' : 'flex';
+
+    const lineConfig = {
+      borderWidth: isDaily ? 2.5 : 4,
+      pointRadius: isDaily ? 0 : 4,
+      pointHoverRadius: 7,
+      pointHoverBorderWidth: 3,
+      pointHoverBackgroundColor: '#fff',
+      tension: isDaily ? 0.15 : 0.35
+    };
+
+    // [주간/일간 주석 토글] 알림톡 이벤트는 일별 모드 데이터에만 존재
+    mainChart.options.plugins.annotation = { clip: false, annotations: {} };
+    eduChart.options.plugins.annotation = { clip: false, annotations: {} };
+
+    // [줌/팬 토글] 일별 모드에서만 세 차트 모두 활성화, 주별 모드에서는 비활성화
+    [mainChart, eduChart, ratioChart].forEach(c => setZoomMode(c, isDaily));
+
+    if (mode === 'weekly') {
+      mainTitle.innerText = "전체 학습자 주별 수료율 추이(배정인원 기준)";
+      eduTitle.innerText = "에듀테크센터 자체마케팅 업체 학습자 주별 수료율 추이(배정인원 기준)";
+      ratioTitle.innerText = "총 수료자 주별 구성 현황 (에듀테크센터 자체마케팅 + 외부마케팅 누적 인원)";
+
+      mainChart.data.labels = eduChart.data.labels = ratioChart.data.labels = renderWeekly.map(d => d.date);
+
+      // [트렁케이션 — 2026년 첫 그래프] 마지막 수집 시점 이후는 null로 잘라서 0%로 그려지지 않게 함. 2025년 라인은 그대로 유지.
+      const weeklyLastIdx = findLastCollectedIndex(renderWeekly, 'totalRate');
+      const weeklyTotalTrunc = truncateAfterIndex(renderWeekly, 'totalRate', weeklyLastIdx);
+
+      // [수료자 인원 막대] 좌측 yCount 축. 수집된 주차까지만 표시. 토글 on일 때만 추가.
+      const weeklyCompleterTrunc = truncateAfterIndex(renderWeekly, 'totalActualCount', weeklyLastIdx);
+      mainChart.data.datasets = [
+        { label: '2026년 전체 수료율', data: weeklyTotalTrunc, borderColor: '#ff4d5a', backgroundColor: 'rgba(255, 77, 90, 0.06)', fill: true, ...lineConfig },
+        { label: '2025년 전체 수료율', data: renderWeekly.map(d => d.lastYearRate), borderColor: '#6b7280', backgroundColor: 'transparent', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, tension: 0.35, datalabels: { display: false } }
+      ];
+      if (showCompleterBars) {
+        mainChart.data.datasets.push({
+          type: 'bar', label: '수료자', data: weeklyCompleterTrunc, yAxisID: 'yCount',
+          backgroundColor: '#4f8ef7', borderRadius: 4, order: 5,
+          barPercentage: 0.55, categoryPercentage: 0.7, datalabels: { display: false }
+        });
+
+        // [축 비례 정렬] 수료자 막대(좌)와 수료율 선(우)이 같은 높이 비율로 보이도록 두 축의 max를 함께 산정.
+        const collected = renderWeekly.slice(0, weeklyLastIdx + 1);
+        const maxCount = Math.max(1, ...collected.map(d => d.totalActualCount || 0));
+        const maxRate = Math.max(0.01, ...collected.map(d => Math.max(d.totalRate || 0, d.lastYearRate || 0)));
+        const niceCount = Math.max(500, Math.ceil((maxCount / 0.9) / 500) * 500); // 데이터가 ~90% 높이를 채우도록
+        const niceRate = Math.ceil((maxRate / 0.9) / 0.02) * 0.02;
+
+        mainChart.options.scales.yCount.display = true;
+        mainChart.options.scales.yCount.min = 0;
+        mainChart.options.scales.yCount.max = niceCount;
+        mainChart.options.scales.y.position = 'right';
+        mainChart.options.scales.y.max = niceRate;
+      } else {
+        mainChart.options.scales.yCount.display = false;
+        delete mainChart.options.scales.yCount.max;
+        mainChart.options.scales.y.position = 'left';
+        delete mainChart.options.scales.y.max;
+      }
+
+      eduChart.data.datasets = [
+        { label: '2026년 에듀 수료율', data: renderWeekly.map(d => d.eduRate), borderColor: '#00b4d8', backgroundColor: 'rgba(0, 180, 216, 0.06)', fill: true, ...lineConfig }
+      ];
+
+      // [어긋남 교정] 바닥 막대(에듀)는 flat하게 깔고, 탑 막대(에듀X) 상단만 둥글려 완전히 결합된 캡슐형으로 빌드
+      ratioChart.data.datasets = [
+        { label: '에듀테크센터 자체마케팅 업체 수료자', data: renderWeekly.map(d => d.eduActualCount), backgroundColor: '#a855f7', borderRadius: 0 },
+        { label: '외부마케팅 업체 수료자', data: renderWeekly.map(d => d.nonEduActualCount), backgroundColor: '#ec4899', borderRadius: {topLeft: 12, topRight: 12, bottomLeft: 0, bottomRight: 0} }
+      ];
+    } else {
+      mainTitle.innerText = "전체 학습자 일별 수료율 추이(배정인원 기준)";
+      eduTitle.innerText = "에듀테크센터 자체마케팅 업체 학습자 일별 수료율 추이(모집인원 기준)";
+      ratioTitle.innerText = "수료자 비율 현황 (누적 인원)";
+
+      // 일별 모드에서는 수료자 막대 축 해제(주별 전용 기능) + 주별에서 설정된 max 초기화
+      mainChart.options.scales.yCount.display = false;
+      delete mainChart.options.scales.yCount.max;
+      mainChart.options.scales.y.position = 'left';
+      delete mainChart.options.scales.y.max;
+
+      mainChart.data.labels = eduChart.data.labels = ratioChart.data.labels = renderDaily.map(d => d.date);
+
+      // [트렁케이션 — 일별 첫 그래프] 마지막 수집 일자 이후 데이터 포인트는 null 처리
+      const dailyLastIdx = findLastCollectedIndex(renderDaily, 'totalRate');
+      const dailyTotalTrunc = truncateAfterIndex(renderDaily, 'totalRate', dailyLastIdx);
+
+      mainChart.data.datasets = [
+        { label: '일별 전체 수료율', data: dailyTotalTrunc, borderColor: '#ff4d5a', backgroundColor: 'rgba(255, 77, 90, 0.03)', fill: true, ...lineConfig }
+      ];
+      eduChart.data.datasets = [
+        { label: '일별 에듀테크센터 자체마케팅 업체 수료율', data: renderDaily.map(d => d.eduRate), borderColor: '#00b4d8', backgroundColor: 'rgba(0, 180, 216, 0.03)', fill: true, ...lineConfig }
+      ];
+
+      // [어긋남 교정] 일별 모드에서도 조밀한 막대선들이 깨지지 않도록 하단부 면 정렬 처리 고정
+      ratioChart.data.datasets = [
+        { label: '에듀테크센터 자체마케팅 업체 수료자', data: renderDaily.map(d => d.eduActualCount), backgroundColor: '#a855f7', borderRadius: 0, datalabels: { display: false } },
+        { label: '외부마케팅 업체 수료자', data: renderDaily.map(d => d.nonEduActualCount), backgroundColor: '#ec4899', borderRadius: {topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0}, datalabels: { display: false } }
+      ];
+
+      // [알림톡 이벤트] 일별 모드에서 M열 데이터를 꺾은선 위 팝업 라벨로 시각화 (canvasId로 드래그 오버라이드 매핑)
+      const mainAnns = buildNoteAnnotations(renderDaily, 'totalRate', '#10b981', '#065f46', 'mainChart');
+      const eduAnns = buildNoteAnnotations(renderDaily, 'eduRate', '#10b981', '#065f46', 'eduChart');
+
+      // [우측 총 수료자 표시] 마지막 수집 지점에 누적 수료자 인원 라벨을 우측에 부착
+      if (dailyLastIdx >= 0) {
+        const lastItem = renderDaily[dailyLastIdx];
+        mainAnns['totalCompleterLabel'] = makeTotalLabel(lastItem.date, lastItem.totalRate, '총 수료자', lastItem.totalActualCount, '#ff4d5a');
+        eduAnns['totalCompleterLabel'] = makeTotalLabel(lastItem.date, (lastItem.eduRate || 0), '에듀 수료자', lastItem.eduActualCount, '#00b4d8');
+      }
+
+      mainChart.options.plugins.annotation = { clip: false, annotations: mainAnns };
+      eduChart.options.plugins.annotation = { clip: false, annotations: eduAnns };
+    }
+
+    // (mainChart.y.max / yCount.max 는 위 분기에서 모드별로 직접 관리하므로 여기서 일괄 삭제하지 않음)
+    if (eduChart.options.scales.y.max) delete eduChart.options.scales.y.max;
+
+    mainChart.update(); eduChart.update(); ratioChart.update();
+  }
+</script>
+</body>
+</html>

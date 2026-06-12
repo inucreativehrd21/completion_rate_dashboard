@@ -1,0 +1,37 @@
+{
+  "configVersion": 1,
+  "minEngineVersion": "1.0.0",
+  "sheetId": "1lDYoypgi222n8ih3QTpLrQSpCl7K_Vilry220urU2mM",
+  "ranges": {
+    "weekly": {
+      "range": "B5:M42",
+      "numCols": 12,
+      "columns": {
+        "date": 0,
+        "totalActualCount": 3,
+        "eduActualCount": 8,
+        "totalRate": 6,
+        "eduRate": 10,
+        "lastYearRate": 11,
+        "changeVal": 7
+      }
+    },
+    "daily": {
+      "range": "B46:N258",
+      "numCols": 13,
+      "columns": {
+        "date": 0,
+        "totalActualCount": 3,
+        "eduActualCount": 8,
+        "totalRate": 6,
+        "eduRate": 10,
+        "note": 11,
+        "changeVal": 7
+      }
+    }
+  },
+  "design": {
+    "appTitle": "2026 HRD아카이브 실시간 수료율 대시보드",
+    "refreshIntervalMin": 10
+  }
+}
