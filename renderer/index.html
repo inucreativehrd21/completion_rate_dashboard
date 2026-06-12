@@ -212,7 +212,7 @@
 
 <div class="container">
   <header>
-    <h1 id="appTitle">2026 HRD아카이브 실시간 수료율 대시보드</h1>
+    <h1><span id="appTitle">2026 HRD아카이브 실시간 수료율 대시보드</span><span id="appVersion" style="font-size:13px;font-weight:600;color:#64748b;vertical-align:middle;margin-left:10px;"></span></h1>
     <div class="controls-group">
       <div class="opacity-control" id="opacityControl" style="display:none;">
         <label>알림톡 투명도</label>
@@ -755,10 +755,13 @@
   let APP_CONFIG = null;
   let refreshTimer = null;
 
+  let APP_VERSION = '';
+
   // config 로더: Electron이면 dashboardAPI.getConfig(), 아니면(브라우저 미리보기) 번들 config.json fetch.
   async function loadAppConfig() {
     if (window.dashboardAPI && window.dashboardAPI.getConfig) {
       const r = await window.dashboardAPI.getConfig();
+      APP_VERSION = r.appVersion || '';
       return r.config;
     }
     const res = await fetch('../config.json');
@@ -771,6 +774,8 @@
       document.getElementById('appTitle').innerText = d.appTitle;
       document.title = d.appTitle;
     }
+    const vEl = document.getElementById('appVersion');
+    if (vEl && APP_VERSION) vEl.textContent = 'v' + APP_VERSION;
   }
 
   function runLoad() {
