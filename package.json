@@ -41,7 +41,8 @@
       {
         "provider": "github",
         "owner": "inucreativehrd21",
-        "repo": "completion_rate_dashboard"
+        "repo": "completion_rate_dashboard",
+        "releaseType": "release"
       }
     ]
   },
